@@ -1,29 +1,36 @@
 
 import { test, expect } from '@playwright/test';
+import { LoginPage } from '../pages/LoginPage';
+import { ProductsPage } from '../pages/ProductsPage';
+import { CartPage } from '../pages/CartPage';
+import { CheckoutPage } from '../pages/CheckoutPage';
 
 test('Complete checkout successfully', async ({ page }) => {
-  // Login
-  await page.goto('https://www.saucedemo.com/');
+  const loginPage = new LoginPage(page);
+  const productsPage = new ProductsPage(page);
+  const cartPage = new CartPage(page);
+  const checkoutPage = new CheckoutPage(page);
 
-  await page.getByPlaceholder('Username').fill('standard_user');
-  await page.getByPlaceholder('Password').fill('secret_sauce');
-  await page.getByRole('button', { name: 'Login' }).click();
+  // Login
+  await loginPage.goto();
+  await loginPage.login('standard_user', 'secret_sauce');
 
   // Add a product
-  await page.locator('.inventory_item').first()
-    .getByRole('button', { name: 'Add to cart' })
-    .click();
+  await productsPage.addBackpackToCart();
+  await productsPage.openCart();
 
-  // Open cart and begin checkout
-  await page.locator('.shopping_cart_link').click();
-  await page.getByRole('button', { name: 'Checkout' }).click();
+  // Begin checkout
+  await cartPage.expectCartPageVisible();
+  await cartPage.proceedToCheckout();
 
   // Enter customer information
-  await page.getByPlaceholder('First Name').fill('Test');
-  await page.getByPlaceholder('Last Name').fill('User');
-  await page.getByPlaceholder('Zip/Postal Code').fill('560001');
+  await checkoutPage.enterCustomerDetails(
+    'Test',
+    'User',
+    '560001'
+  );
 
-  await page.getByRole('button', { name: 'Continue' }).click();
+  await checkoutPage.continueCheckout();
 
   // Verify checkout overview
   await expect(page).toHaveURL(/checkout-step-two\.html/);
@@ -32,7 +39,7 @@ test('Complete checkout successfully', async ({ page }) => {
   ).toBeVisible();
 
   // Finish checkout
-  await page.getByRole('button', { name: 'Finish' }).click();
+  await checkoutPage.finishCheckout();
 
   // Verify order confirmation
   await expect(page).toHaveURL(/checkout-complete\.html/);
