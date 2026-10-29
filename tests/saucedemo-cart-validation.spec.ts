@@ -1,13 +1,17 @@
 
 import { test, expect } from '@playwright/test';
+import { LoginPage } from '../pages/LoginPage';
+import { ProductsPage } from '../pages/ProductsPage';
+import { CartPage } from '../pages/CartPage';
 
 test('Verify product details in shopping cart', async ({ page }) => {
-  // Open SauceDemo and log in
-  await page.goto('https://www.saucedemo.com/');
+  const loginPage = new LoginPage(page);
+  const productsPage = new ProductsPage(page);
+  const cartPage = new CartPage(page);
 
-  await page.getByPlaceholder('Username').fill('standard_user');
-  await page.getByPlaceholder('Password').fill('secret_sauce');
-  await page.getByRole('button', { name: 'Login' }).click();
+  // Open SauceDemo and log in
+  await loginPage.goto();
+  await loginPage.login('standard_user', 'secret_sauce');
 
   // Get the first product name before adding it
   const firstProduct = page.locator('.inventory_item').first();
@@ -16,18 +20,14 @@ test('Verify product details in shopping cart', async ({ page }) => {
     .innerText();
 
   // Add the product to the cart
-  await firstProduct
-    .getByRole('button', { name: 'Add to cart' })
-    .click();
+  await firstProduct.getByRole('button', { name: 'Add to cart' }).click();
 
   // Open the shopping cart
-  await page.locator('.shopping_cart_link').click();
+  await productsPage.openCart();
 
   // Verify cart page
   await expect(page).toHaveURL(/cart.html/);
-  await expect(
-    page.getByText('Your Cart', { exact: true })
-  ).toBeVisible();
+  await cartPage.expectCartPageVisible();
 
   // Verify the selected product is in the cart
   await expect(
