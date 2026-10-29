@@ -1,22 +1,21 @@
 
 import { test, expect } from '@playwright/test';
+import { LoginPage } from '../pages/LoginPage';
+import { ProductsPage } from '../pages/ProductsPage';
 
 test('Verify products page after login', async ({ page }) => {
-  // Login
-  await page.goto('https://www.saucedemo.com/');
+  const loginPage = new LoginPage(page);
+  const productsPage = new ProductsPage(page);
 
-  await page.getByPlaceholder('Username').fill('standard_user');
-  await page.getByPlaceholder('Password').fill('secret_sauce');
-  await page.getByRole('button', { name: 'Login' }).click();
+  // Login using LoginPage
+  await loginPage.goto();
+  await loginPage.login('standard_user', 'secret_sauce');
 
   // Verify the products page
   await expect(page).toHaveURL(/inventory.html/);
-  await expect(
-    page.getByText('Products', { exact: true })
-  ).toBeVisible();
+  await productsPage.expectProductsPageVisible();
 
   // Verify product listings are displayed
   const products = page.locator('.inventory_item');
-
   await expect(products).toHaveCount(6);
 });
