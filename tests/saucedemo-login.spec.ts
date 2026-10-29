@@ -1,55 +1,43 @@
 
 import { test, expect } from '@playwright/test';
+import { LoginPage } from '../pages/LoginPage';
 
 test('Verify login with valid credentials', async ({ page }) => {
-  // Open SauceDemo
-  await page.goto('https://www.saucedemo.com/');
+  const loginPage = new LoginPage(page);
 
-  // Enter username
-  await page.getByPlaceholder('Username').fill('standard_user');
+  await loginPage.goto();
+  await loginPage.login('standard_user', 'secret_sauce');
 
-  // Enter password
-  await page.getByPlaceholder('Password').fill('secret_sauce');
-
-  // Click Login
-  await page.getByRole('button', { name: 'Login' }).click();
-
-  // Verify successful login
   await expect(page).toHaveURL(/inventory.html/);
-
   await expect(
     page.getByText('Products', { exact: true })
   ).toBeVisible();
 });
 
 test('Verify login fails with invalid password', async ({ page }) => {
-  await page.goto('https://www.saucedemo.com/');
+  const loginPage = new LoginPage(page);
 
-  await page.getByPlaceholder('Username').fill('standard_user');
-  await page.getByPlaceholder('Password').fill('wrong_password');
+  await loginPage.goto();
+  await loginPage.login('standard_user', 'wrong_password');
 
-  await page.getByRole('button', { name: 'Login' }).click();
+  await expect(loginPage.errorMessage).toBeVisible();
+  await expect(loginPage.errorMessage).toContainText(
+    'Username and password do not match any user in this service'
+  );
 
-  // Verify that the login error is displayed
-  await expect(
-    page.getByText('Username and password do not match any user in this service')
-  ).toBeVisible();
-
-  // Verify that login did not succeed
   await expect(page).not.toHaveURL(/inventory.html/);
 });
 
 test('Verify login with empty credentials', async ({ page }) => {
-  await page.goto('https://www.saucedemo.com/');
+  const loginPage = new LoginPage(page);
 
-  // Click Login without entering credentials
-  await page.getByRole('button', { name: 'Login' }).click();
+  await loginPage.goto();
+  await loginPage.loginButton.click();
 
-  // Verify validation error
-  await expect(
-    page.getByText('Username is required')
-  ).toBeVisible();
+  await expect(loginPage.errorMessage).toBeVisible();
+  await expect(loginPage.errorMessage).toContainText(
+    'Username is required'
+  );
 
-  // Verify the user remains on the login page
   await expect(page).toHaveURL('https://www.saucedemo.com/');
 });
